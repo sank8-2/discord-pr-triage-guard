@@ -11,9 +11,22 @@ Effect: `enforce`
 - `failproofai` CLI available (`npx failproofai` or global install)
 - Auth via `gh auth token` / `GH_TOKEN` / `GITHUB_TOKEN` as `sank8-2`
 
+## Status
+
+**Published:** `sank8-2/discord-pr-triage-guard@0.1.0`  
+Release: https://github.com/sank8-2/discord-pr-triage-guard/releases/tag/0.1.0
+
+```bash
+failproofai policies add sank8-2/discord-pr-triage-guard
+# or:
+failproofai policies add sank8-2/discord-pr-triage-guard --all
+```
+
 ## Dry-run (no GitHub write)
 
 ```bash
+node scripts/release-pack.mjs --dry-run
+# or:
 npx failproofai publish policies/discord-pr-triage-policies.mjs \
   --dry-run \
   --id sank8-2/discord-pr-triage-guard \
@@ -29,6 +42,8 @@ Inspect `dist-pack/`:
 ## Publish
 
 ```bash
+node scripts/release-pack.mjs
+# or:
 npx failproofai publish policies/discord-pr-triage-policies.mjs \
   --repo sank8-2/discord-pr-triage-guard \
   --id sank8-2/discord-pr-triage-guard \
