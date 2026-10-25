@@ -1,0 +1,50 @@
+# 3-minute demo script
+
+**0:00–0:25 — problem**
+
+> A Discord community bot awards leaderboard points from GitHub PRs. The model can read the PR. The hard part is trusting it with the award and the ping.
+
+**0:25–0:55 — baseline failure**
+
+```bash
+node src/cli.mjs demo --case spam_pr_no_points --policy off
+```
+
+Point at the trace: baseline awards points to a spam PR and pings the spammer (`awards: 1`, `pings: 1`, `policy_denials: 0`).
+
+**0:55–1:35 — guarded behavior**
+
+```bash
+node src/cli.mjs demo --case spam_pr_no_points --policy on
+```
+
+Point at: first `award_points` denied, rules fetched, PR scored, no award, no ping. Say:
+
+> The policy didn’t ask the model to be careful. It made the side effect conditional on evidence.
+
+**1:35–2:15 — two more gates**
+
+```bash
+node src/cli.mjs demo --case duplicate_award_once --policy on
+node src/cli.mjs demo --case discord_ping_failure_no_duplicate_points --policy on
+```
+
+Show `policy_denials`, idempotent awards, and ping-only-after-commit.
+
+**2:15–2:45 — eval table**
+
+```bash
+node src/cli.mjs eval
+```
+
+> 10 cases, 3 runs each. Baseline 0/30. Patched 30/30. Every case is a real failure mode: spam, duplicate, stale rules, injection, 429, 500, race.
+
+**2:45–3:00 — close**
+
+> We didn’t make the model smarter. We made every point and ping conditional, idempotent, and auditable.
+
+Install for consumers:
+
+```bash
+failproofai policies add sank8-2/discord-pr-triage-guard
+```

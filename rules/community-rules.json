@@ -1,0 +1,22 @@
+{
+  "version": "rules-2026-10-25",
+  "repo": "sank8-2/discord-pr-triage-guard",
+  "program": {
+    "id": "2026-10",
+    "label": "hacktoberfest-accepted",
+    "require_label": true,
+    "start": "2026-10-01T00:00:00Z",
+    "end": "2026-10-31T23:59:59Z",
+    "min_prs": 5,
+    "top_n": 5,
+    "points_per_pr": 10
+  },
+  "eligibility": {
+    "min_diff_lines": 10,
+    "spam_labels": ["spam", "invalid", "wontfix"],
+    "allow_self_pr": false,
+    "require_maintainer_approval": true,
+    "excluded_users": ["maintainer"]
+  },
+  "tie_break": ["earliest_merge", "lowest_pr"]
+}

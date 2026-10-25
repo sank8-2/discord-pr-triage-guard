@@ -1,0 +1,29 @@
+{
+  "name": "discord-pr-triage-guard",
+  "version": "0.1.0",
+  "description": "Policy-guarded PR triage agent for a Discord community leaderboard",
+  "main": "src/cli.mjs",
+  "scripts": {
+    "test": "node --test",
+    "eval": "node src/cli.mjs eval",
+    "demo": "node src/cli.mjs demo --case spam_pr_no_points --policy on",
+    "serve": "node src/cli.mjs serve",
+    "policy:check": "node --check policies/discord-pr-triage-policies.mjs && node --test test/policy.test.mjs",
+    "postinstall": "node scripts/patch-failproofai-package.mjs"
+  },
+  "keywords": [
+    "failproofai",
+    "agent-reliability",
+    "discord",
+    "github",
+    "hacktoberfest"
+  ],
+  "author": "sank8-2",
+  "license": "MIT",
+  "type": "module",
+  "private": false,
+  "dependencies": {
+    "@failproofai/sdk": "^0.0.1-beta.0",
+    "failproofai": "^1.0.12"
+  }
+}
