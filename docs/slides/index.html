@@ -6,19 +6,21 @@
   <title>Failproof — Discord PR Triage Guard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
       --ink: #061410;
       --ink-mid: #0c241c;
-      --fog: #c8e6d8;
-      --mute: #7a9e8c;
+      --fog: #e4f5ec;
+      --mute: #9bb8aa;
       --mint: #6ff2a0;
       --mint-dim: #3a9e64;
       --deny: #ff6b5a;
       --warn: #f0c14a;
       --glass: rgba(12, 36, 28, 0.55);
       --line: rgba(111, 242, 160, 0.18);
+      --font-display: "Figtree", "Segoe UI", sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -27,9 +29,10 @@
       height: 100%;
       background: var(--ink);
       color: var(--fog);
-      font-family: "Syne", sans-serif;
+      font-family: var(--font-display);
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
 
     body {
@@ -116,7 +119,7 @@
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: clamp(0.65rem, 1.4vw, 0.8rem);
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -130,20 +133,21 @@
     }
 
     .eyebrow {
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: clamp(0.7rem, 1.5vw, 0.85rem);
-      letter-spacing: 0.14em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--mint);
       margin-bottom: 0.85rem;
     }
 
     h1 {
-      font-size: clamp(2rem, 6.5vw, 4.4rem);
-      font-weight: 800;
-      line-height: 1.05;
-      letter-spacing: -0.03em;
-      max-width: 18ch;
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 6.2vw, 4.1rem);
+      font-weight: 700;
+      line-height: 1.18;
+      letter-spacing: -0.01em;
+      max-width: 20ch;
     }
 
     h1 .fp-word {
@@ -151,26 +155,27 @@
     }
 
     h2 {
-      font-size: clamp(1.65rem, 4.8vw, 3.1rem);
-      font-weight: 800;
-      line-height: 1.1;
-      letter-spacing: -0.02em;
+      font-family: var(--font-display);
+      font-size: clamp(1.65rem, 4.5vw, 2.85rem);
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
       margin-bottom: 1.1rem;
-      max-width: 22ch;
+      max-width: 24ch;
     }
 
     .lede {
-      font-size: clamp(1.05rem, 2.4vw, 1.45rem);
-      font-weight: 600;
-      line-height: 1.35;
+      font-size: clamp(1.05rem, 2.4vw, 1.4rem);
+      font-weight: 500;
+      line-height: 1.45;
       color: var(--fog);
-      max-width: 36ch;
-      opacity: 0.92;
+      max-width: 38ch;
+      opacity: 0.95;
     }
 
     .sub {
       margin-top: 1rem;
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: clamp(0.75rem, 1.5vw, 0.9rem);
       color: var(--mute);
       max-width: 48ch;
@@ -197,7 +202,7 @@
     }
 
     .fail-list li {
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: clamp(0.85rem, 1.8vw, 1.05rem);
       display: grid;
       grid-template-columns: auto 1fr;
@@ -228,7 +233,7 @@
     }
 
     .gate-pill {
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: clamp(0.8rem, 1.6vw, 1rem);
       font-weight: 600;
       letter-spacing: 0.06em;
@@ -251,7 +256,7 @@
     }
 
     .gate-arrow {
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       color: var(--mute);
       font-size: 0.9rem;
     }
@@ -266,7 +271,7 @@
     }
 
     .flow-node {
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: clamp(0.72rem, 1.5vw, 0.9rem);
       padding: 0.55rem 0.7rem;
       border: 1px solid var(--line);
@@ -287,7 +292,7 @@
 
     .flow-sep {
       color: var(--mute);
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: 0.85rem;
     }
 
@@ -308,14 +313,14 @@
     }
 
     .policy-row code {
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: clamp(0.75rem, 1.5vw, 0.92rem);
       color: var(--mint);
       font-weight: 500;
     }
 
     .policy-row span {
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: clamp(0.72rem, 1.4vw, 0.88rem);
       color: var(--mute);
       line-height: 1.4;
@@ -330,7 +335,7 @@
     }
 
     .contrast h3 {
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: 0.75rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -348,7 +353,7 @@
 
     .contrast .meta {
       margin-top: 0.75rem;
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: 0.8rem;
       color: var(--mute);
       line-height: 1.5;
@@ -363,17 +368,18 @@
     }
 
     .score-block .num {
+      font-family: var(--font-display);
       font-size: clamp(2.8rem, 8vw, 5rem);
-      font-weight: 800;
-      line-height: 1;
-      letter-spacing: -0.04em;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.015em;
     }
 
     .score-block.off .num { color: var(--deny); }
     .score-block.on .num { color: var(--mint); }
 
     .score-block .label {
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: 0.8rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -395,7 +401,7 @@
     }
 
     .pack-list .name {
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: clamp(0.85rem, 1.8vw, 1.05rem);
       color: var(--mint);
       font-weight: 600;
@@ -408,7 +414,7 @@
     }
 
     .pack-list .meta {
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: 0.75rem;
       color: var(--mute);
     }
@@ -422,7 +428,7 @@
 
     .cmds code {
       display: block;
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: clamp(0.72rem, 1.55vw, 0.95rem);
       padding: 0.7rem 0.85rem;
       background: rgba(0, 0, 0, 0.35);
@@ -434,7 +440,7 @@
     }
 
     .cmds .hint {
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: 0.75rem;
       color: var(--mute);
       margin-top: 0.5rem;
@@ -456,7 +462,7 @@
 
     .publish-lines .path {
       display: block;
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: clamp(0.72rem, 1.4vw, 0.88rem);
       color: var(--mint);
       margin-top: 0.25rem;
@@ -475,7 +481,7 @@
       padding: 0.85rem clamp(1.25rem, 6vw, 5.5rem) 1.1rem;
       z-index: 10;
       background: linear-gradient(transparent, rgba(4, 17, 13, 0.92) 40%);
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--font-mono);
       font-size: 0.7rem;
       color: var(--mute);
     }
