@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Failproof — Discord PR Triage Guard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #061410;
+      --ink-mid: #0c241c;
+      --fog: #c8e6d8;
+      --mute: #7a9e8c;
+      --mint: #6ff2a0;
+      --mint-dim: #3a9e64;
+      --deny: #ff6b5a;
+      --warn: #f0c14a;
+      --glass: rgba(12, 36, 28, 0.55);
+      --line: rgba(111, 242, 160, 0.18);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--ink);
+      color: var(--fog);
+      font-family: "Syne", sans-serif;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background:
+        radial-gradient(ellipse 90% 70% at 12% -10%, rgba(61, 180, 120, 0.22), transparent 55%),
+        radial-gradient(ellipse 70% 60% at 95% 110%, rgba(255, 107, 90, 0.12), transparent 50%),
+        radial-gradient(ellipse 50% 40% at 70% 20%, rgba(111, 242, 160, 0.08), transparent 45%),
+        linear-gradient(165deg, #04110d 0%, #0a1f18 45%, #071612 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.35;
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black, transparent);
+      animation: gridDrift 28s linear infinite;
+    }
+
+    @keyframes gridDrift {
+      from { background-position: 0 0, 0 0; }
+      to { background-position: 64px 32px, 64px 32px; }
+    }
+
+    @keyframes riseIn {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulseGate {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(111, 242, 160, 0.35); }
+      50% { box-shadow: 0 0 0 10px rgba(111, 242, 160, 0); }
+    }
+
+    @keyframes denyFlash {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.65; }
+    }
+
+    .deck {
+      position: relative;
+      height: 100%;
+      width: 100%;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: clamp(1.25rem, 5vw, 4.5rem) clamp(1.25rem, 6vw, 5.5rem);
+      padding-bottom: clamp(4rem, 10vh, 5.5rem);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.45s ease, visibility 0.45s;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .slide.active .anim {
+      animation: riseIn 0.55s ease both;
+    }
+    .slide.active .anim-d1 { animation-delay: 0.08s; }
+    .slide.active .anim-d2 { animation-delay: 0.16s; }
+    .slide.active .anim-d3 { animation-delay: 0.24s; }
+    .slide.active .anim-d4 { animation-delay: 0.32s; }
+
+    .brand-bar {
+      position: absolute;
+      top: clamp(0.9rem, 3vw, 1.75rem);
+      left: clamp(1.25rem, 6vw, 5.5rem);
+      right: clamp(1.25rem, 6vw, 5.5rem);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(0.65rem, 1.4vw, 0.8rem);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mute);
+      z-index: 2;
+    }
+
+    .brand-bar .fp {
+      color: var(--mint);
+      font-weight: 600;
+    }
+
+    .eyebrow {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(0.7rem, 1.5vw, 0.85rem);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--mint);
+      margin-bottom: 0.85rem;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 6.5vw, 4.4rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      max-width: 18ch;
+    }
+
+    h1 .fp-word {
+      color: var(--mint);
+    }
+
+    h2 {
+      font-size: clamp(1.65rem, 4.8vw, 3.1rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.1rem;
+      max-width: 22ch;
+    }
+
+    .lede {
+      font-size: clamp(1.05rem, 2.4vw, 1.45rem);
+      font-weight: 600;
+      line-height: 1.35;
+      color: var(--fog);
+      max-width: 36ch;
+      opacity: 0.92;
+    }
+
+    .sub {
+      margin-top: 1rem;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(0.75rem, 1.5vw, 0.9rem);
+      color: var(--mute);
+      max-width: 48ch;
+      line-height: 1.5;
+    }
+
+    .thesis {
+      margin-top: 1.5rem;
+      padding-left: 1rem;
+      border-left: 3px solid var(--mint);
+      font-size: clamp(1rem, 2.2vw, 1.35rem);
+      font-weight: 600;
+      line-height: 1.4;
+      max-width: 34ch;
+      color: var(--fog);
+    }
+
+    .fail-list {
+      list-style: none;
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 0.5rem;
+      max-width: 42rem;
+    }
+
+    .fail-list li {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(0.85rem, 1.8vw, 1.05rem);
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.75rem;
+      align-items: baseline;
+      line-height: 1.35;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.45rem;
+      border-radius: 2px;
+      font-weight: 600;
+    }
+
+    .tag.deny { background: rgba(255, 107, 90, 0.18); color: var(--deny); }
+    .tag.warn { background: rgba(240, 193, 74, 0.15); color: var(--warn); }
+    .tag.race { background: rgba(111, 242, 160, 0.12); color: var(--mint); }
+
+    .gate-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 1.4rem;
+      align-items: center;
+    }
+
+    .gate-pill {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(0.8rem, 1.6vw, 1rem);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.55rem 0.9rem;
+      border: 1px solid var(--line);
+    }
+
+    .gate-pill.deny {
+      color: var(--deny);
+      border-color: rgba(255, 107, 90, 0.45);
+      animation: denyFlash 2.4s ease-in-out infinite;
+    }
+
+    .gate-pill.instruct { color: var(--warn); border-color: rgba(240, 193, 74, 0.4); }
+    .gate-pill.allow {
+      color: var(--mint);
+      border-color: rgba(111, 242, 160, 0.5);
+      animation: pulseGate 2.8s ease-in-out infinite;
+    }
+
+    .gate-arrow {
+      font-family: "IBM Plex Mono", monospace;
+      color: var(--mute);
+      font-size: 0.9rem;
+    }
+
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem 0.55rem;
+      margin-top: 0.75rem;
+      max-width: 52rem;
+    }
+
+    .flow-node {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(0.72rem, 1.5vw, 0.9rem);
+      padding: 0.55rem 0.7rem;
+      border: 1px solid var(--line);
+      background: var(--glass);
+      line-height: 1.3;
+    }
+
+    .flow-node.gate {
+      border-color: rgba(111, 242, 160, 0.55);
+      color: var(--mint);
+      font-weight: 600;
+    }
+
+    .flow-node.fx {
+      border-color: rgba(255, 107, 90, 0.35);
+      color: #ffb0a6;
+    }
+
+    .flow-sep {
+      color: var(--mute);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.85rem;
+    }
+
+    .policy-grid {
+      display: grid;
+      gap: 0.7rem;
+      margin-top: 0.4rem;
+      max-width: 44rem;
+    }
+
+    .policy-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr);
+      gap: 0.75rem;
+      align-items: baseline;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 0.65rem;
+    }
+
+    .policy-row code {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(0.75rem, 1.5vw, 0.92rem);
+      color: var(--mint);
+      font-weight: 500;
+    }
+
+    .policy-row span {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(0.72rem, 1.4vw, 0.88rem);
+      color: var(--mute);
+      line-height: 1.4;
+    }
+
+    .contrast {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(1rem, 3vw, 2.5rem);
+      margin-top: 0.75rem;
+      max-width: 48rem;
+    }
+
+    .contrast h3 {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
+    }
+
+    .contrast .off h3 { color: var(--deny); }
+    .contrast .on h3 { color: var(--mint); }
+
+    .contrast p {
+      font-size: clamp(0.95rem, 2vw, 1.2rem);
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .contrast .meta {
+      margin-top: 0.75rem;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.8rem;
+      color: var(--mute);
+      line-height: 1.5;
+    }
+
+    .score {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem 2.5rem;
+      margin-top: 1rem;
+      align-items: flex-end;
+    }
+
+    .score-block .num {
+      font-size: clamp(2.8rem, 8vw, 5rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .score-block.off .num { color: var(--deny); }
+    .score-block.on .num { color: var(--mint); }
+
+    .score-block .label {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--mute);
+      margin-top: 0.35rem;
+    }
+
+    .pack-list {
+      list-style: none;
+      display: grid;
+      gap: 0.85rem;
+      margin-top: 0.5rem;
+      max-width: 48rem;
+    }
+
+    .pack-list li {
+      display: grid;
+      gap: 0.2rem;
+    }
+
+    .pack-list .name {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(0.85rem, 1.8vw, 1.05rem);
+      color: var(--mint);
+      font-weight: 600;
+    }
+
+    .pack-list .desc {
+      font-size: clamp(0.9rem, 1.8vw, 1.1rem);
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .pack-list .meta {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.75rem;
+      color: var(--mute);
+    }
+
+    .cmds {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+      max-width: 48rem;
+    }
+
+    .cmds code {
+      display: block;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(0.72rem, 1.55vw, 0.95rem);
+      padding: 0.7rem 0.85rem;
+      background: rgba(0, 0, 0, 0.35);
+      border-left: 3px solid var(--mint);
+      color: var(--fog);
+      overflow-x: auto;
+      white-space: nowrap;
+      line-height: 1.4;
+    }
+
+    .cmds .hint {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.75rem;
+      color: var(--mute);
+      margin-top: 0.5rem;
+    }
+
+    .publish-lines {
+      list-style: none;
+      display: grid;
+      gap: 0.9rem;
+      margin-top: 0.6rem;
+      max-width: 40rem;
+    }
+
+    .publish-lines li {
+      font-size: clamp(0.95rem, 2vw, 1.2rem);
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .publish-lines .path {
+      display: block;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(0.72rem, 1.4vw, 0.88rem);
+      color: var(--mint);
+      margin-top: 0.25rem;
+      font-weight: 500;
+    }
+
+    .chrome {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem clamp(1.25rem, 6vw, 5.5rem) 1.1rem;
+      z-index: 10;
+      background: linear-gradient(transparent, rgba(4, 17, 13, 0.92) 40%);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.7rem;
+      color: var(--mute);
+    }
+
+    .dots {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(122, 158, 140, 0.35);
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .dot.active {
+      background: var(--mint);
+      transform: scale(1.25);
+    }
+
+    .nav-hint kbd {
+      font-family: inherit;
+      border: 1px solid var(--line);
+      padding: 0.1rem 0.35rem;
+      margin: 0 0.1rem;
+      color: var(--fog);
+    }
+
+    .counter { min-width: 3.5rem; text-align: right; color: var(--fog); }
+
+    @media (max-width: 720px) {
+      .contrast { grid-template-columns: 1fr; }
+      .policy-row { grid-template-columns: 1fr; gap: 0.25rem; }
+      .nav-hint { display: none; }
+      .flow-sep { display: none; }
+      .flow-node { width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body::before { animation: none; }
+      .slide.active .anim { animation: none; }
+      .gate-pill.deny, .gate-pill.allow { animation: none; }
+      .slide { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="brand-bar" aria-hidden="true">
+    <span><span class="fp">Failproof</span> · PreToolUse</span>
+    <span>Hacktober Hack · Bengaluru</span>
+  </div>
+
+  <main class="deck" id="deck" aria-live="polite">
+
+    <!-- 1 -->
+    <section class="slide active" data-title="Title">
+      <p class="eyebrow anim">Failproof AI × Quad AI</p>
+      <h1 class="anim anim-d1">
+        <span class="fp-word">Failproof</span> at the tool boundary
+      </h1>
+      <p class="lede anim anim-d2">discord-pr-triage-guard · sank8-2</p>
+      <p class="thesis anim anim-d3">
+        Most agents can do the task; this one can be trusted with the side effect.
+      </p>
+      <p class="sub anim anim-d4">We didn’t make the model smarter. We made every point and ping conditional, idempotent, and auditable.</p>
+    </section>
+
+    <!-- 2 -->
+    <section class="slide" data-title="Problem">
+      <p class="eyebrow anim">The problem</p>
+      <h2 class="anim anim-d1">Discord PR points bot</h2>
+      <p class="lede anim anim-d2">
+        GitHub PR in → award leaderboard points → commit → ping the winner in Discord.
+      </p>
+      <p class="sub anim anim-d3">
+        Reading the PR is easy. Trusting the agent with the award and the ping is the hard part.
+      </p>
+    </section>
+
+    <!-- 3 -->
+    <section class="slide" data-title="Failure modes">
+      <p class="eyebrow anim">Failure modes</p>
+      <h2 class="anim anim-d1">Side effects go wrong</h2>
+      <ul class="fail-list anim anim-d2">
+        <li><span class="tag deny">spam</span> Spam PR still gets points and a ping</li>
+        <li><span class="tag deny">dup</span> Duplicate webhook awards twice</li>
+        <li><span class="tag warn">inject</span> PR body treated as instructions</li>
+        <li><span class="tag warn">429/500</span> Retry after timeout doubles the write</li>
+        <li><span class="tag race">race</span> Concurrent merges double-award</li>
+      </ul>
+    </section>
+
+    <!-- 4 -->
+    <section class="slide" data-title="Why Failproof">
+      <p class="eyebrow anim">Why not a smarter prompt</p>
+      <h2 class="anim anim-d1"><span style="color:var(--mint)">Failproof</span> gates the call</h2>
+      <p class="lede anim anim-d2">
+        PreToolUse runs before the tool. Policy decides. The model never gets a free side effect.
+      </p>
+      <div class="gate-row anim anim-d3">
+        <span class="gate-pill deny">deny</span>
+        <span class="gate-arrow">›</span>
+        <span class="gate-pill instruct">instruct</span>
+        <span class="gate-arrow">›</span>
+        <span class="gate-pill allow">allow</span>
+      </div>
+      <p class="sub anim anim-d4">deny beats instruct beats allow — evidence enriched on every tool call.</p>
+    </section>
+
+    <!-- 5 -->
+    <section class="slide" data-title="Architecture">
+      <p class="eyebrow anim">Architecture</p>
+      <h2 class="anim anim-d1">Evidence → policy → effect</h2>
+      <div class="flow anim anim-d2">
+        <span class="flow-node">agent</span>
+        <span class="flow-sep">→</span>
+        <span class="flow-node">runtime evidence<br />rules · eligibility · keys</span>
+        <span class="flow-sep">→</span>
+        <span class="flow-node gate">Failproof<br />PreToolUse gate</span>
+        <span class="flow-sep">→</span>
+        <span class="flow-node fx">award · commit · ping</span>
+      </div>
+      <p class="sub anim anim-d3">Policies check facts (rules version, spam, duplicate, approval, commit state) — not the model’s claims.</p>
+    </section>
+
+    <!-- 6 -->
+    <section class="slide" data-title="Four policies">
+      <p class="eyebrow anim">discord-pr-triage-guard</p>
+      <h2 class="anim anim-d1">Four PreToolUse policies</h2>
+      <div class="policy-grid anim anim-d2">
+        <div class="policy-row">
+          <code>block-award-without-rules</code>
+          <span>No award until fresh rules + eligible PR</span>
+        </div>
+        <div class="policy-row">
+          <code>block-duplicate-award</code>
+          <span>Idempotency key — no double-award</span>
+        </div>
+        <div class="policy-row">
+          <code>block-ping-before-commit</code>
+          <span>No ping until commit + verified winner</span>
+        </div>
+        <div class="policy-row">
+          <code>warn-untrusted-pr-text</code>
+          <span>PR title/body are data, never instructions</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="slide" data-title="Live contrast">
+      <p class="eyebrow anim">Demo · spam_pr_no_points</p>
+      <h2 class="anim anim-d1">Policy off vs on</h2>
+      <div class="contrast anim anim-d2">
+        <div class="off">
+          <h3>policy off</h3>
+          <p>Awards spam. Pings the spammer.</p>
+          <p class="meta">awards: 1 · pings: 1<br />policy_denials: 0</p>
+        </div>
+        <div class="on">
+          <h3>Failproof on</h3>
+          <p>First award denied. Rules fetched. Zero points. Zero pings.</p>
+          <p class="meta">awards: 0 · pings: 0<br />policy_denials ≥ 1</p>
+        </div>
+      </div>
+      <p class="sub anim anim-d3">The policy didn’t ask the model to be careful. It made the side effect conditional on evidence.</p>
+    </section>
+
+    <!-- 8 -->
+    <section class="slide" data-title="Eval">
+      <p class="eyebrow anim">Own evals · reliability fit</p>
+      <h2 class="anim anim-d1">10 cases × 3 runs</h2>
+      <div class="score anim anim-d2">
+        <div class="score-block off">
+          <div class="num">0/30</div>
+          <div class="label">baseline</div>
+        </div>
+        <div class="score-block on">
+          <div class="num">30/30</div>
+          <div class="label">Failproof patched</div>
+        </div>
+      </div>
+      <p class="sub anim anim-d3">
+        Spam · duplicate · tie-break · self-PR · approval · stale rules · injection · 429 · Discord 500 · race.
+        Event scoring: 80 pts reliability (pass only if 3/3).
+      </p>
+    </section>
+
+    <!-- 9 -->
+    <section class="slide" data-title="Reusable packs">
+      <p class="eyebrow anim">Three live packs · @0.1.0 · Cloud v1</p>
+      <h2 class="anim anim-d1">Reusable Failproof packs</h2>
+      <ul class="pack-list anim anim-d2">
+        <li>
+          <span class="name">sank8-2/discord-pr-triage-guard</span>
+          <span class="desc">Discord PR triage — awards &amp; pings behind gates</span>
+          <span class="meta">fleet machine sanketh · deploy #3</span>
+        </li>
+        <li>
+          <span class="name">sank8-2/idempotent-writes</span>
+          <span class="desc">Idempotency keys · block duplicate &amp; blind retry</span>
+          <span class="meta">fleet machine sanketh · deploy #3</span>
+        </li>
+        <li>
+          <span class="name">sank8-2/policy-creation-guard</span>
+          <span class="desc">Agents cannot publish/install policies without approval</span>
+          <span class="meta">fleet machine sanketh · deploy #3</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- 10 -->
+    <section class="slide" data-title="Publish paths">
+      <p class="eyebrow anim">Distribution</p>
+      <h2 class="anim anim-d1">GitHub pack + Cloud + fleet</h2>
+      <ul class="publish-lines anim anim-d2">
+        <li>
+          GitHub policy packs
+          <span class="path">failproofai policies add sank8-2/&lt;pack&gt;</span>
+        </li>
+        <li>
+          Failproof Cloud Direct Policies
+          <span class="path">fp policies publish … → Cloud v1 each</span>
+        </li>
+        <li>
+          Fleet enforce on machine
+          <span class="path">fp fleet deploy sanketh — all three on deploy #3</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- 11 -->
+    <section class="slide" data-title="Install">
+      <p class="eyebrow anim">Judges · copy these</p>
+      <h2 class="anim anim-d1">Install commands</h2>
+      <div class="cmds anim anim-d2">
+        <code>failproofai policies add sank8-2/discord-pr-triage-guard</code>
+        <code>failproofai policies add sank8-2/idempotent-writes</code>
+        <code>failproofai policies add sank8-2/policy-creation-guard</code>
+        <p class="hint">Optional: append --all to force every policy on</p>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section class="slide" data-title="Close">
+      <p class="eyebrow anim">Failproof</p>
+      <h1 class="anim anim-d1">
+        Trusted with the<br /><span class="fp-word">side effect</span>
+      </h1>
+      <p class="thesis anim anim-d2">
+        We didn’t make the model smarter. We made every point and ping conditional, idempotent, and auditable.
+      </p>
+      <p class="sub anim anim-d3">deny › instruct › allow · PreToolUse · sank8-2 · Hacktober Hack</p>
+    </section>
+  </main>
+
+  <footer class="chrome">
+    <span class="nav-hint"><kbd>→</kbd> <kbd>Space</kbd> next · <kbd>←</kbd> back · <kbd>F</kbd> fullscreen</span>
+    <div class="dots" id="dots" role="tablist" aria-label="Slides"></div>
+    <span class="counter" id="counter">1 / 12</span>
+  </footer>
+
+  <script>
+    (function () {
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      const dotsEl = document.getElementById("dots");
+      const counter = document.getElementById("counter");
+      let i = 0;
+
+      slides.forEach((_, idx) => {
+        const b = document.createElement("button");
+        b.className = "dot" + (idx === 0 ? " active" : "");
+        b.type = "button";
+        b.setAttribute("aria-label", "Go to slide " + (idx + 1));
+        b.addEventListener("click", () => go(idx));
+        dotsEl.appendChild(b);
+      });
+
+      const dots = Array.from(dotsEl.querySelectorAll(".dot"));
+
+      function go(n) {
+        i = Math.max(0, Math.min(slides.length - 1, n));
+        slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+        dots.forEach((d, idx) => d.classList.toggle("active", idx === i));
+        counter.textContent = (i + 1) + " / " + slides.length;
+        history.replaceState(null, "", "#" + (i + 1));
+      }
+
+      function next() { go(i + 1); }
+      function prev() { go(i - 1); }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
+          e.preventDefault();
+          next();
+        } else if (e.key === "ArrowLeft" || e.key === "PageUp" || e.key === "Backspace") {
+          e.preventDefault();
+          prev();
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          go(0);
+        } else if (e.key === "End") {
+          e.preventDefault();
+          go(slides.length - 1);
+        } else if (e.key === "f" || e.key === "F") {
+          if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+          else document.exitFullscreen?.();
+        }
+      });
+
+      let touchX = null;
+      document.addEventListener("touchstart", (e) => {
+        touchX = e.changedTouches[0].screenX;
+      }, { passive: true });
+      document.addEventListener("touchend", (e) => {
+        if (touchX == null) return;
+        const dx = e.changedTouches[0].screenX - touchX;
+        if (Math.abs(dx) > 50) (dx < 0 ? next : prev)();
+        touchX = null;
+      }, { passive: true });
+
+      const hash = parseInt(location.hash.slice(1), 10);
+      if (hash >= 1 && hash <= slides.length) go(hash - 1);
+      else go(0);
+    })();
+  </script>
+</body>
+</html>

@@ -55,6 +55,9 @@ npm run eval
 
 npm test
 npm run serve   # GET /health, POST /github (stateless per request)
+
+# Interactive judge demo UI (real fixtures + PreToolUse animation)
+npm run demo-ui   # http://127.0.0.1:8790/
 ```
 
 Requires Node 24+.
@@ -80,15 +83,28 @@ Acceptance: baseline **0/30**, patched **30/30**, accepted **10/10**.
 
 ```bash
 failproofai policies add sank8-2/discord-pr-triage-guard
-# or select all policies:
+failproofai policies add sank8-2/idempotent-writes
+failproofai policies add sank8-2/policy-creation-guard
+# or force every policy on a pack:
 failproofai policies add sank8-2/discord-pr-triage-guard --all
 ```
 
-See [docs/PUBLISHING.md](docs/PUBLISHING.md) for dry-run / publish / verify.
+All three packs are live at `@0.1.0` (Failproof Cloud v1) and enforced on fleet machine `sanketh` (deploy #3). See [docs/PUBLISHING.md](docs/PUBLISHING.md) for dry-run / publish / verify.
 
 ## Demo
 
 See [docs/DEMO.md](docs/DEMO.md) for the 3-minute script.
+
+**Interactive UI (preferred for judges):**
+
+```bash
+node src/cli.mjs demo-ui --port 8790
+# open http://127.0.0.1:8790/
+```
+
+Runs real `evals/cases.json` fixtures via `POST /demo/run`. Step 1 baseline (policy off) → side effects fire. Step 2 Failproof on → PreToolUse deny, counters and trace update live.
+
+**Judge slides:** open [docs/slides/index.html](docs/slides/index.html) in a browser (`→` / `Space` to advance).
 
 ## License
 

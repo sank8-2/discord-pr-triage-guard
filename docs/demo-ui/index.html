@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#3d5f58" />
+  <title>Failproof · Discord PR Triage Guard — Hacktoberfest 2026 Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+  <!-- Same Google Fonts URL as https://hacktoberfest.com /brand -->
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@700;800&family=Inter:wght@400;700;800&family=Martian+Mono:wght@400..800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="topbar-brand" href="https://hacktoberfest.com/" target="_blank" rel="noopener noreferrer" aria-label="Hacktoberfest 2026 home">
+      <img class="topbar-logo" src="./assets/hacktoberfest-2026-horizontal-white.svg" alt="Hacktoberfest 2026" width="220" height="36" />
+    </a>
+    <p class="topbar-meta">October 2026 · AI belongs to everyone</p>
+  </header>
+
+  <header class="hero">
+    <p class="hero-eyebrow">Failproof × Hacktober Hack demo</p>
+    <p class="brand-failproof">Fail<span class="sky">proof</span></p>
+    <h1 class="brand-project">Discord PR Triage Guard</h1>
+    <p class="hero-line">Watch the side effect fire — then watch PreToolUse deny it. Real eval fixtures, Hacktoberfest 2026 brand surface.</p>
+  </header>
+
+  <main class="stage">
+    <section class="controls" aria-label="Demo controls">
+      <div class="pack-tabs" id="packTabs" role="tablist" aria-label="Policy pack">
+        <button type="button" class="pack-tab" role="tab" data-pack="triage" aria-selected="true">PR Triage Guard</button>
+        <button type="button" class="pack-tab" role="tab" data-pack="idempotent-writes" aria-selected="false">Idempotent Writes</button>
+        <button type="button" class="pack-tab" role="tab" data-pack="policy-creation-guard" aria-selected="false">Policy Creation Guard</button>
+      </div>
+      <p class="pack-hint" id="packHint">All 10 fixtures from <code>evals/cases.json</code> — baseline (off) then Failproof (on).</p>
+      <div class="scenario-row" id="scenarioRow" role="tablist" aria-label="Scenario"></div>
+      <div class="run-row">
+        <button type="button" class="btn btn-unsafe" id="btnBaseline" data-policy="off">
+          <span class="btn-kicker">Step 1</span>
+          Run baseline (unsafe)
+        </button>
+        <button type="button" class="btn btn-safe" id="btnFailproof" data-policy="on" disabled>
+          <span class="btn-kicker">Step 2</span>
+          Run with Failproof
+        </button>
+      </div>
+    </section>
+
+    <section class="verdict" id="verdict" data-tone="idle" aria-live="polite">
+      <span class="verdict-label">Ready</span>
+      <p class="verdict-title">Pick a scenario. Run baseline first.</p>
+      <p class="verdict-detail">Real fixtures from <code>evals/cases.json</code> — not theater-only.</p>
+    </section>
+
+    <section class="board" aria-label="Live demo state">
+      <article class="panel pr-panel" id="prPanel">
+        <h2 class="panel-title" id="contextTitle">Incoming PR</h2>
+        <div class="pr-card" id="prCard">
+          <div class="pr-meta">
+            <span class="pr-num" id="prNum">#—</span>
+            <span class="pr-labels" id="prLabels"></span>
+          </div>
+          <p class="pr-title" id="prTitle">Waiting for a run…</p>
+          <p class="pr-author">@<span id="prAuthor">—</span></p>
+          <p class="pr-body" id="prBody"></p>
+        </div>
+      </article>
+
+      <article class="panel pipeline-panel">
+        <h2 class="panel-title">Tool pipeline · PreToolUse</h2>
+        <ol class="pipeline" id="pipeline" aria-label="Tool and policy events"></ol>
+      </article>
+
+      <article class="panel meters-panel">
+        <h2 class="panel-title">Live counters</h2>
+        <div class="meters">
+          <div class="meter" data-key="awards">
+            <span class="meter-value" id="meterAwards">0</span>
+            <span class="meter-label">awards</span>
+          </div>
+          <div class="meter" data-key="pings">
+            <span class="meter-value" id="meterPings">0</span>
+            <span class="meter-label">pings</span>
+          </div>
+          <div class="meter" data-key="denials">
+            <span class="meter-value" id="meterDenials">0</span>
+            <span class="meter-label">policy_denials</span>
+          </div>
+        </div>
+        <div class="shield" id="shield" data-state="idle">
+          <div class="shield-ring" aria-hidden="true"></div>
+          <div class="shield-copy">
+            <span class="shield-mode" id="shieldMode">GATE IDLE</span>
+            <span class="shield-sub" id="shieldSub">PreToolUse · deny › instruct › allow</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel ledger-panel">
+        <h2 class="panel-title">Award ledger · Discord</h2>
+        <ul class="ledger" id="awardLedger"></ul>
+        <ul class="pings" id="pingLog"></ul>
+        <ol class="leaderboard" id="leaderboard"></ol>
+      </article>
+    </section>
+
+    <section class="trace-strip" aria-label="Trace">
+      <h2 class="panel-title">Trace</h2>
+      <div class="trace" id="traceStrip"></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>Hacktoberfest 2026 brand tokens · Failproof AI × Quad AI</span>
+    <span class="foot-sep">·</span>
+    <a href="https://hacktoberfest.com/brand/" target="_blank" rel="noopener noreferrer">Brand kit</a>
+    <span class="foot-sep">·</span>
+    <code>node src/cli.mjs demo-ui</code>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

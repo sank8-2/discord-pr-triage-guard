@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { runAgent } from "./agent.mjs";
 import { buildScenario, printEvalTable, runEvals } from "./evals.mjs";
 import { createServer } from "./server.mjs";
+import { startDemoServer } from "./demo-server.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -12,6 +13,7 @@ function usage() {
   console.log(`Usage:
   node src/cli.mjs list
   node src/cli.mjs demo --case <id> --policy on|off
+  node src/cli.mjs demo-ui [--port 8790]
   node src/cli.mjs eval [--case <id>]
   node src/cli.mjs serve [--port 8787]
 `);
@@ -117,6 +119,11 @@ async function cmdServe(args) {
   });
 }
 
+async function cmdDemoUi(args) {
+  const port = Number(args.port ?? 8790);
+  await startDemoServer({ port });
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const command = args._[0];
@@ -128,6 +135,7 @@ async function main() {
 
   if (command === "list") return cmdList();
   if (command === "demo") return cmdDemo(args);
+  if (command === "demo-ui") return cmdDemoUi(args);
   if (command === "eval") return cmdEval(args);
   if (command === "serve") return cmdServe(args);
 
